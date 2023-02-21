@@ -1,0 +1,41 @@
+name: Build
+
+on:
+
+  push:
+    branches: [ main ]
+    paths-ignore:
+    - 'doc/**'
+    - '**.md'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+        DOTNET_NOLOGO: true
+        DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+    steps:
+    - name: Setup .NET 7
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    
+    - name: Checkout source code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Test
+      run: ./build.sh --no-color ci
+
+    - name: Pack with dotnet
+      run: ./build.sh --no-color pack
+
+    - name: Publish CI Packages
+      run: |
+        for package in $(find -name "*.nupkg"); do
+           echo "${0##*/}": Pushing $package to Feedz...
+           dotnet nuget push $package --source https://f.feedz.io/osnova/tailwindcss-dotnet/nuget/index.json --api-key ${{ secrets.FEEDZ_KEY }} --skip-duplicate
+        done
