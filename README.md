@@ -1,4 +1,3 @@
 # Tailwind CSS for ASP.NET Core
 
-A [.NET tool](https://www.nuget.org/packages/tailwindcss-dotnet) for installing and invoking [tailwindcss](https://tailwindcss.com) via the
-stand-alone [tailwindcss cli](https://github.com/tailwindlabs/tailwindcss/tree/master/standalone-cli)
+A [dotnet tool](https://www.nuget.org/packages/tailwindcss-dotnet) that simplifies the installation and usage of [Tailwind CSS](https://tailwindcss.com) in ASP.NET Core projects by utilizing the stand-alone [Tailwind CSS CLI](https://github.com/tailwindlabs/tailwindcss/tree/master/standalone-cli).
