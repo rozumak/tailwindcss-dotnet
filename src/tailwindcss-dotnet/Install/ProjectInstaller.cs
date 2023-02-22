@@ -62,7 +62,7 @@ public class ProjectInstaller
             throw new Exception($"Cant find '{sourceName}' in embedded resources.");
         }
 
-        FileStream destStream = new FileStream(destFileName, FileMode.OpenOrCreate);
+        await using FileStream destStream = new FileStream(destFileName, FileMode.OpenOrCreate);
         await sourceStream.CopyToAsync(destStream);
     }
 
