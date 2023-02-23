@@ -6,14 +6,19 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>tailwind</ToolCommandName>
 		<RootNamespace>Tailwindcss.DotNetTool</RootNamespace>
+		<Description>
+			A dotnet tool for installing and invoking Tailwind CSS.
+		</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <EmbeddedResource Include="Install\tailwind.config.js"/>
-	  <EmbeddedResource Include="Install\app.tailwind.css"/>
+		<EmbeddedResource Include="Install\tailwind.config.js"/>
+		<EmbeddedResource Include="Install\app.tailwind.css"/>
+
+		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
 	</ItemGroup>
 </Project>

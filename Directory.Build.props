@@ -15,6 +15,7 @@
 	    <PublishRepositoryUrl>true</PublishRepositoryUrl>
 	    <EmbedUntrackedSources>true</EmbedUntrackedSources>
 	    <DebugType>embedded</DebugType>
+	    <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
 	<ItemGroup>
