@@ -9,7 +9,7 @@ CommandLineBuilder builder = new CommandLineBuilder
 {
     Command =
     {
-        Description = $"TailwindCSS CLI {Upstream.Version}"
+        Description = $"A dotnet tool for installing and invoking Tailwind CSS. Default version of Tailwind CSS CLI is {Upstream.Version}"
     }
 };
 foreach (var command in AppCommands.Instance.All)

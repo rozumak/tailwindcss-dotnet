@@ -2,41 +2,34 @@
 
 namespace Tailwindcss.DotNetTool.Cli;
 
-public class UnsupportedPlatformException : Exception
-{
-    public UnsupportedPlatformException(string message) : base(message)
-    {
-
-    }
-}
-
 public class TailwindCli
 {
     private bool _initialized;
     private string? _binPath;
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(string? version = null)
     {
-        string version = Upstream.Version;
+        string useVersion = version ?? Upstream.Version;
         string? binName = Upstream.GetNativeExecutableName();
 
         if (binName == null)
         {
             throw new UnsupportedPlatformException(
                 $"dotnet-tailwind does not support the {RuntimeInformation.RuntimeIdentifier} platform\r\n" +
-                "Please install tailwindcss following instructions at https://tailwindcss.com/docs/installation");
+                "Please install Tailwind CSS following instructions at https://tailwindcss.com/docs/installation");
         }
 
-        _binPath = Path.GetFullPath(binName, DotnetTool.InstallationFolder);
+        string storePath = Path.Combine(DotnetTool.InstallationFolder, useVersion);
+        _binPath = Path.GetFullPath(binName, storePath);
 
         if (!File.Exists(_binPath))
         {
+            Directory.CreateDirectory(storePath);
+
             //install native dependencies
             var client = new TailwindCliDownloader();
-            await client.DownloadAsync(version, binName, _binPath);
+            await client.DownloadAsync(useVersion, binName, _binPath);
         }
-
-        //TODO: check installed version and download new
 
         _initialized = true;
     }

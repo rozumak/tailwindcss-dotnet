@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Text;
 
 namespace Tailwindcss.DotNetTool.Cli;
@@ -18,8 +19,7 @@ public class TailwindCliDownloader
             // Delete file if exist
             File.Delete(saveBinPath);
 
-            await using var fileStream = File.Open(saveBinPath, FileMode.CreateNew);
-            await DownloadFileAsync(url, fileStream);
+            await DownloadFileAsync(url, saveBinPath);
         }
         catch
         {
@@ -28,11 +28,16 @@ public class TailwindCliDownloader
         }
     }
 
-    private async Task DownloadFileAsync(string url, Stream output)
+    private async Task DownloadFileAsync(string url, string saveBinPath)
     {
         using HttpClient client = new HttpClient();
         using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new ExecutableNotFoundException($"Cannot find the Tailwind CSS executable via url {url}.");
+        }
 
         response.EnsureSuccessStatusCode();
 
@@ -40,11 +45,30 @@ public class TailwindCliDownloader
         var reporter = new ConsoleProgressReporter(contentLength);
 
         await using var stream = await client.GetStreamAsync(url);
-        await CopyToAsync(stream, output, 4096 * 100, reporter);
 
-        reporter.Report(output.Length, true);
+        try
+        {
+            await using var output = File.Open(saveBinPath, FileMode.CreateNew);
+            await CopyToAsync(stream, output, 4096 * 100, reporter);
 
-        await output.FlushAsync();
+            reporter.Report(output.Length, true);
+
+            await output.FlushAsync();
+        }
+        catch
+        {
+            // Silently try remove created file, otherwise if file corrupted it will fail on next run
+            try
+            {
+                File.Delete(saveBinPath);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            throw;
+        }
     }
 
     static async Task CopyToAsync(Stream source, Stream destination, int bufferSize, ConsoleProgressReporter? reporter)

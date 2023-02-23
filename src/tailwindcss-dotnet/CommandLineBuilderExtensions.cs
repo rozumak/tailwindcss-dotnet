@@ -2,6 +2,8 @@
 using System.CommandLine.Builder;
 using System.CommandLine.IO;
 using System.CommandLine.Parsing;
+using System.Text.RegularExpressions;
+using Tailwindcss.DotNetTool.Cli;
 using Tailwindcss.DotNetTool.Commands;
 
 namespace Tailwindcss.DotNetTool;
@@ -11,10 +13,48 @@ internal static class CommandLineBuilderExtensions
     public static CommandLineBuilder UseContextInitializer(
         this CommandLineBuilder builder, AppInvocationContext appContext)
     {
+        const string pattern = @"^v3\.\d+\.\d+$";
+
+        string? tailwindVersion = null;
+        var tailwindVersionOption = new Option<string?>("--tailwindcss",
+            "Specify tailwind version to use in format 'v3.x.x'.");
+        builder.Command.AddGlobalOption(tailwindVersionOption);
+
         builder.AddMiddleware(async (context, next) =>
         {
-            // Initialize cli by downloading required runtime files if needed
-            await appContext.Cli.InitializeAsync();
+            OptionResult? optionResult = context.ParseResult.FindResultFor(tailwindVersionOption);
+            if (optionResult != null)
+            {
+                if (context.ParseResult.Errors.Any(e => e.SymbolResult?.Symbol == tailwindVersionOption))
+                {
+                    // Error will be show via ErrorMiddleware just passing it further
+                    await next(context);
+                    return;
+                }
+
+                tailwindVersion = optionResult.GetValueOrDefault<string?>();
+                if (string.IsNullOrWhiteSpace(tailwindVersion) || !Regex.IsMatch(tailwindVersion, pattern))
+                {
+                    context.Console.Error.WriteLine("Invalid Tailwind CSS version format.");
+                    context.ExitCode = 1;
+
+                    return;
+                }
+            }
+
+            try
+            {
+                // Initialize cli by downloading required runtime files if needed
+                await appContext.Cli.InitializeAsync(tailwindVersion);
+            }
+            catch (Exception e) when (e is ExecutableNotFoundException ||
+                                      e is UnsupportedPlatformException)
+            {
+                context.Console.Error.WriteLine(e.Message);
+                context.ExitCode = 1;
+                return;
+            }
+
             await next(context);
         });
 
