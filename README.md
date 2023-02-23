@@ -86,3 +86,10 @@ By default, minified assets will be generated. If you want to change this behavi
 ### Customizing Tailwind inputs or outputs
 
 The default paths are opinionated. If you need to use custom file paths or make other changes not covered by default behavior, you can access the platform-specific executable directly by running the command `tailwind exec` and passing any necessary command line arguments to the Tailwind CLI.
+
+### Override Tailwind CLI version
+
+If you need to use a specific version of Tailwind CLI for your project, you can do so by specifying the version using the `--tailwindcss` option.
+
+For example, to use Tailwind CLI of version 3.2.1, you can use the following command:
+`tailwind build --tailwindcss v3.2.1`
