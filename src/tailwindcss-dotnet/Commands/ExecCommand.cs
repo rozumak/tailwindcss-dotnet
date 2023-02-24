@@ -21,7 +21,7 @@ public class ExecCommand : ICommand
     {
         string binPath = cli.Executable();
 
-        var exe = new CliExe(binPath, string.Join(' ', args));
+        var exe = new CliExe(binPath, string.Join(' ', args), null);
         return exe.RunAsync();
     }
 }

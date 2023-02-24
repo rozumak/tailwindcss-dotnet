@@ -17,7 +17,7 @@ internal static class CommandLineBuilderExtensions
 
         string? tailwindVersion = null;
         var tailwindVersionOption = new Option<string?>("--tailwindcss",
-            "Specify tailwind version to use in format 'v3.x.x'.");
+            "Specify tailwind cli version to use in format 'v3.x.x'.");
         builder.Command.AddGlobalOption(tailwindVersionOption);
 
         builder.AddMiddleware(async (context, next) =>
@@ -147,6 +147,7 @@ internal static class CommandLineBuilderExtensions
             // Pass control directly to tailwind cli and return after execution completed
             if (context.ParseResult.CommandResult.Command.Name == "exec")
             {
+                // Project option is ignored
                 string[] args = Environment.GetCommandLineArgs().Skip(2).ToArray();
                 int result = await AppCommands.Instance.Exec.Execute(appContext.Cli, args);
                 context.ExitCode = result;

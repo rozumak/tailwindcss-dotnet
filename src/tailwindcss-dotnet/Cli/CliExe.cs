@@ -8,15 +8,19 @@ namespace Tailwindcss.DotNetTool.Cli
 
         public string? Arguments { get; }
 
-        public CliExe(string fileName, string? arguments)
+        public string? WorkingDirectory { get; }
+
+        public CliExe(string fileName, string? arguments, string? workingDirectory)
         {
             FileName = fileName;
             Arguments = arguments;
+            WorkingDirectory = workingDirectory;
         }
 
         public async Task<int> RunAsync()
         {
             var result = await ProcessUtil.RunAsync(FileName, Arguments ?? "",
+                workingDirectory: WorkingDirectory,
                 outputDataReceived: Console.WriteLine, errorDataReceived: Console.WriteLine);
             return result.ExitCode;
         }

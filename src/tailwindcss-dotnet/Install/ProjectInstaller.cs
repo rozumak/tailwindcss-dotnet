@@ -16,7 +16,7 @@ public class ProjectInstaller
             await CopyTo("tailwind.config.js", tailwindConfig);
         }
 
-        var tailwindCss = Path.GetFullPath("styles\\app.tailwind.css", projectRoot);
+        var tailwindCss = Path.GetFullPath(Path.Combine("styles", "app.tailwind.css"), projectRoot);
         if (!File.Exists(tailwindCss))
         {
             Console.WriteLine("Add default style\\app.tailwind.css");
@@ -42,7 +42,7 @@ public class ProjectInstaller
         }
 
         //TODO: do we need delete this file? we can't empty directory
-        string builtCss = Path.GetFullPath("wwwroot\\css\\app.css", projectRoot);
+        string builtCss = Path.GetFullPath(Path.Combine("wwwroot", "css", "app.css"), projectRoot);
         if (File.Exists(builtCss))
         {
             Console.WriteLine("Clean wwwroot\\css");
@@ -68,33 +68,34 @@ public class ProjectInstaller
 
     private string? FindDefaultLayoutPath(string projectRoot)
     {
-        // RazorPages template
-        var layoutPath = Path.GetFullPath("Pages\\Shared\\_Layout.cshtml", projectRoot);
+        // "razor" template
+        var layoutPath = Path.GetFullPath(Path.Combine("Pages", "Shared", "_Layout.cshtml"), projectRoot);
         if (File.Exists(layoutPath))
         {
             return layoutPath;
         }
 
-        // MVC template
-        layoutPath = Path.GetFullPath("Views\\Shared\\_layout.cshtml", projectRoot);
+        // "mvc" template
+        layoutPath = Path.GetFullPath(Path.Combine("Views", "Shared", "_Layout.cshtml"), projectRoot);
         if (File.Exists(layoutPath))
         {
             return layoutPath;
         }
 
-        // Blazor server template
-        layoutPath = Path.GetFullPath("Pages\\_Host.cshtml", projectRoot);
+        // "blazorserver" template
+        layoutPath = Path.GetFullPath(Path.Combine("Pages", "_Host.cshtml"), projectRoot);
         if (File.Exists(layoutPath))
         {
             return layoutPath;
         }
 
-        // Blazor wasm template
-        layoutPath = Path.GetFullPath("wwwroot\\index.html", projectRoot);
-        if (File.Exists(layoutPath))
-        {
-            return layoutPath;
-        }
+        // It's named same way don't need to include app.css reference in layout
+        // "blazorwasm" template
+        //layoutPath = Path.GetFullPath(Path.Combine("wwwroot", "index.html"), projectRoot);
+        //if (File.Exists(layoutPath))
+        //{
+        //    return layoutPath;
+        //}
 
         return null;
     }

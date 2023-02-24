@@ -14,11 +14,6 @@ public class TailwindCliDownloader
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(saveBinPath)!);
-
-            // Delete file if exist
-            File.Delete(saveBinPath);
-
             await DownloadFileAsync(url, saveBinPath);
         }
         catch
@@ -48,7 +43,7 @@ public class TailwindCliDownloader
 
         try
         {
-            await using var output = File.Open(saveBinPath, FileMode.CreateNew);
+            await using var output = File.Open(saveBinPath, FileMode.Create);
             await CopyToAsync(stream, output, 4096 * 100, reporter);
 
             reporter.Report(output.Length, true);
@@ -57,7 +52,7 @@ public class TailwindCliDownloader
         }
         catch
         {
-            // Silently try remove created file, otherwise if file corrupted it will fail on next run
+            // Silently try remove created temp file when failed to download
             try
             {
                 File.Delete(saveBinPath);
