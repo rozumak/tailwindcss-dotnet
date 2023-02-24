@@ -52,6 +52,8 @@ Start using Tailwind’s utility classes to style your content.
 
 [Tailwind CSS](https://tailwindcss.com) is a CSS framework that uses a utility-first approach to styling elements. It allows you to apply pre-existing classes directly in your templates. The `tailwindcss-dotnet` tool wraps the standalone executable of the Tailwind CSS v3 framework, which is platform-specific and not bundled within the tool. When you run the tool for the first time, it downloads and saves the required executables automatically.
 
+It is supports the same platforms as the native Tailwind CLI executable, including Windows, macOS, and Linux.
+
 Starting from version 3, Tailwind CSS uses the Just-In-Time (JIT) technique to generate styles. It scans specified template files for class names and generates corresponding styles only for the names it finds. This means that you cannot generate class names programmatically. If you need styles for names that don't exist in your content files, you can use the [safelist option](https://tailwindcss.com/docs/content-configuration#safelisting-classes). However, it is not recommended to do so.
 
 ### Installation
