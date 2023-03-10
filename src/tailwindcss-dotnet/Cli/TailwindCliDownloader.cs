@@ -95,11 +95,10 @@ public class TailwindCliDownloader
 
         public void Report(long totalBytesRead, bool final = false)
         {
-            //calculate speed in MB/s
-            double speed = totalBytesRead / _stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
-
-            if (!final)
+            if (!final && !Console.IsOutputRedirected)
             {
+                double speed = CalculateSpeed();
+
                 if (_totalSize.HasValue)
                 {
                     double percentage = (double)totalBytesRead / _totalSize.Value * 100;
@@ -113,11 +112,19 @@ public class TailwindCliDownloader
             }
             else
             {
+                double speed = CalculateSpeed();
                 _stopwatch.Stop();
 
                 WriteCore(
                     $"Download completed in {_stopwatch.Elapsed.TotalSeconds:F2} seconds, average speed: {speed:F2} MB/s",
                     true);
+            }
+
+            double CalculateSpeed()
+            {
+                // Calculate speed in MB/s
+                double speed = totalBytesRead / _stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
+                return speed;
             }
         }
 
