@@ -10,7 +10,12 @@ public class Upstream
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return "tailwindcss-windows-x64.exe";
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.Arm64 => "tailwindcss-windows-arm64.exe",
+                Architecture.X64 => "tailwindcss-windows-x64.exe",
+                _ => null
+            };
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
