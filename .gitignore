@@ -32,3 +32,6 @@ _ReSharper*/
 packages/
 artifacts/
 .vscode/
+# JetBrains Rider
+.idea/
+*.sln.iml
