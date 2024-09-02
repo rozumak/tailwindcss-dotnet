@@ -48,7 +48,7 @@ namespace build
             Target(Compile, DependsOn(Restore), () =>
             {
                 Run("dotnet",
-                    $"build {solutionName} --no-restore --framework net7.0");
+                    $"build {solutionName} --no-restore");
             });
 
             Target("ci", DependsOn("default"));
