@@ -7,7 +7,6 @@
 	    <Authors>Max Rozborskyi</Authors>
 	    <PackageProjectUrl>https://github.com/rozumak/tailwindcss-dotnet</PackageProjectUrl>
 	    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-	    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
 	    <ImplicitUsings>true</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
