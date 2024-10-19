@@ -1,26 +1,48 @@
-﻿//Copied from project Tye https://github.com/dotnet/tye/blob/main/src/Microsoft.Tye.Core/ProcessResult.cs
+﻿// Copied from project Aspire with small modifications
+// https://github.com/dotnet/aspire/blob/main/src/Aspire.Hosting/Dcp/Process/ProcessResult.cs
+// https://github.com/dotnet/aspire/blob/main/src/Aspire.Hosting/Dcp/Process/ProcessSpec.cs
+// https://github.com/dotnet/aspire/blob/main/src/Aspire.Hosting/Dcp/Process/ProcessUtil.cs
 
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.CommandLine;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Tailwindcss.DotNetTool.Infrastructure;
 
-public class ProcessResult
+internal sealed class ProcessResult
 {
-    public ProcessResult(string standardOutput, string standardError, int exitCode)
+    public ProcessResult(int exitCode)
     {
-        StandardOutput = standardOutput;
-        StandardError = standardError;
         ExitCode = exitCode;
     }
 
-    public string StandardOutput { get; }
-    public string StandardError { get; }
     public int ExitCode { get; }
 }
 
-internal static class ProcessUtil
+internal sealed class ProcessSpec
+{
+    public string ExecutablePath { get; }
+    public string? WorkingDirectory { get; init; }
+    public IDictionary<string, string> EnvironmentVariables { get; init; } = new Dictionary<string, string>();
+    public bool InheritEnv { get; init; } = true;
+    public string? Arguments { get; init; }
+    public Action<string>? OnOutputData { get; init; }
+    public Action<string>? OnErrorData { get; init; }
+    public Action<int>? OnStart { get; init; }
+    public Action<int>? OnStop { get; init; }
+    public bool KillEntireProcessTree { get; init; } = true;
+    public bool ThrowOnNonZeroReturnCode { get; init; } = true;
+
+    public ProcessSpec(string executablePath)
+    {
+        ExecutablePath = executablePath;
+    }
+}
+
+internal static partial class ProcessUtil
 {
     #region Native Methods
 
@@ -29,196 +51,157 @@ internal static class ProcessUtil
 
     #endregion
 
-    private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    private static readonly TimeSpan s_processExitTimeout = TimeSpan.FromSeconds(5);
 
-    private const int ProcessExitTimeoutMs = 30 * 1000; // 30 seconds timeout for the process to exit.
-
-    public static async Task<ProcessResult> RunAsync(
-        string filename,
-        string arguments,
-        string? workingDirectory = null,
-        bool throwOnError = true,
-        IDictionary<string, string>? environmentVariables = null,
-        Action<string>? outputDataReceived = null,
-        Action<string>? errorDataReceived = null,
-        Action<int>? onStart = null,
-        Action<int>? onStop = null,
-        CancellationToken cancellationToken = default)
+    public static async Task<int> RunAsync(string fileName, string? arguments = null)
     {
-        using var process = new Process()
+        ProcessSpec procSpec = new ProcessSpec(fileName)
+        {
+            WorkingDirectory = Directory.GetCurrentDirectory(),
+            Arguments = arguments ?? "",
+            OnOutputData = Console.Out.Write,
+            OnErrorData = Console.Error.Write,
+            InheritEnv = false,
+        };
+
+        var (result, _) = Run(procSpec);
+        return (await result).ExitCode;
+    }
+
+    public static (Task<ProcessResult>, IAsyncDisposable) Run(ProcessSpec processSpec)
+    {
+        var process = new System.Diagnostics.Process()
         {
             StartInfo =
             {
-                FileName = filename,
-                Arguments = arguments,
+                FileName = processSpec.ExecutablePath,
+                WorkingDirectory = processSpec.WorkingDirectory ?? string.Empty,
+                Arguments = processSpec.Arguments,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = !IsWindows,
-                WindowStyle = ProcessWindowStyle.Hidden
+                WindowStyle = ProcessWindowStyle.Hidden,
             },
             EnableRaisingEvents = true
         };
 
-        if (workingDirectory != null)
+        if (!processSpec.InheritEnv)
         {
-            process.StartInfo.WorkingDirectory = workingDirectory;
+            process.StartInfo.Environment.Clear();
         }
 
-        if (environmentVariables != null)
+        foreach (var (key, value) in processSpec.EnvironmentVariables)
         {
-            foreach (var kvp in environmentVariables)
-            {
-                process.StartInfo.Environment.Add(kvp!);
-            }
+            process.StartInfo.Environment[key] = value;
         }
 
-        var outputLock = new SpinLock();
+        // Use a reset event to prevent output processing and exited events from running until OnStart is complete.
+        // OnStart might have logic that sets up data structures that then are used by these events.
+        var startupComplete = new ManualResetEventSlim(false);
 
-        void WithOutputLock(Action action)
+        // Note: even though the child process has exited, its children may be alive and still producing output.
+        // See https://github.com/dotnet/runtime/issues/29232#issuecomment-1451584094 for how this might affect waiting for process exit.
+        // We are going to discard that (grandchild) output by checking process.HasExited.
+
+        if (processSpec.OnOutputData != null)
         {
-            bool gotLock = false;
-
-            try
+            process.OutputDataReceived += (_, e) =>
             {
-                outputLock.Enter(ref gotLock);
+                startupComplete.Wait();
 
-                action();
-            }
-            finally
-            {
-                if (gotLock)
+                if (String.IsNullOrEmpty(e.Data))
                 {
-                    outputLock.Exit();
+                    return;
                 }
-            }
+
+                processSpec.OnOutputData.Invoke(e.Data);
+            };
         }
 
-        var outputBuilder = new StringBuilder();
-        process.OutputDataReceived += (_, e) =>
+        if (processSpec.OnErrorData != null)
         {
-            if (e.Data == null)
+            process.ErrorDataReceived += (_, e) =>
             {
-                return;
-            }
-
-            if (outputDataReceived != null)
-            {
-                outputDataReceived.Invoke(e.Data);
-            }
-            else
-            {
-                WithOutputLock(() => outputBuilder.AppendLine(e.Data));
-            }
-        };
-
-        var errorBuilder = new StringBuilder();
-        process.ErrorDataReceived += (_, e) =>
-        {
-            if (e.Data == null)
-            {
-                return;
-            }
-
-            if (errorDataReceived != null)
-            {
-                errorDataReceived.Invoke(e.Data);
-            }
-            else
-            {
-                WithOutputLock(() => errorBuilder.AppendLine(e.Data));
-            }
-        };
-
-        var processLifetimeTask = new TaskCompletionSource<ProcessResult>();
-
-        process.Exited += (_, e) =>
-        {
-            lock (process)
-            {
-                // Even though the Exited event has been raised, WaitForExit() must still be called to ensure the output buffers
-                // have been flushed before the process is considered completely done.
-                // Because of the bug in the dotnet runtime https://github.com/dotnet/runtime/issues/29232, Process.WaitForExit()
-                // hangs for processes that spawn another long-running processes.
-                // Since these are expected to be long running processes and we're typically not concerned with capturing all of its output
-                // i.e. it's probably ok for some output to be lost on shutdown, since Tye is shutting down anyway,
-                // we call Process.WaitForProcessExit(ProcessExitTimeoutMs).
-                // Also, since this is a process.Exited event, process.ExitCode is valid even if WaitForExit() times out.
-                process.WaitForExit(ProcessExitTimeoutMs);
-            }
-
-            // NOTE: If WaitForExit() returns false, more output may be written,
-            //       so we must synchronize access to the output StringBuilders.
-
-            WithOutputLock(
-                () =>
+                startupComplete.Wait();
+                if (String.IsNullOrEmpty(e.Data))
                 {
-                    if (throwOnError && process.ExitCode != 0)
-                    {
-                        processLifetimeTask.TrySetException(new InvalidOperationException($"Command {filename} {arguments} returned exit code {process.ExitCode}. Standard error: \"{errorBuilder.ToString()}\""));
-                    }
-                    else
-                    {
-                        processLifetimeTask.TrySetResult(new ProcessResult(outputBuilder.ToString(), errorBuilder.ToString(), process.ExitCode));
-                    }
-                });
-        };
-
-        // lock ensures we're reading output when WaitForExit is called in process.Exited event.
-        lock (process)
-        {
-            process.Start();
-            onStart?.Invoke(process.Id);
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-        }
-
-        var cancelledTcs = new TaskCompletionSource<object?>();
-        await using var _ = cancellationToken.Register(() => cancelledTcs.TrySetResult(null));
-
-        var result = await Task.WhenAny(processLifetimeTask.Task, cancelledTcs.Task);
-
-        if (result == cancelledTcs.Task)
-        {
-            if (!IsWindows)
-            {
-                sys_kill(process.Id, sig: 2); // SIGINT
-            }
-            else
-            {
-                if (!process.CloseMainWindow())
-                {
-                    process.Kill(entireProcessTree: true);
+                    return;
                 }
-            }
 
-            if (!process.HasExited)
-            {
-                var cancel = new CancellationTokenSource();
-                await Task.WhenAny(processLifetimeTask.Task, Task.Delay(TimeSpan.FromSeconds(5), cancel.Token));
-                cancel.Cancel();
-
-                if (!process.HasExited)
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-            }
+                processSpec.OnErrorData.Invoke(e.Data);
+            };
         }
 
-        var processResult = await processLifetimeTask.Task;
-        onStop?.Invoke(processResult.ExitCode);
-        return processResult;
-    }
+        var processLifetimeTcs = new TaskCompletionSource<ProcessResult>();
 
-    public static void KillProcess(int pid)
-    {
         try
         {
-            using var process = Process.GetProcessById(pid);
-            process?.Kill(entireProcessTree: true);
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            processSpec.OnStart?.Invoke(process.Id);
+
+            process.WaitForExitAsync().ContinueWith(t =>
+            {
+                startupComplete.Wait();
+
+                if (processSpec.ThrowOnNonZeroReturnCode && process.ExitCode != 0)
+                {
+                    processLifetimeTcs.TrySetException(new InvalidOperationException(
+                        $"Command {processSpec.ExecutablePath} {processSpec.Arguments} returned non-zero exit code {process.ExitCode}"));
+                }
+                else
+                {
+                    processLifetimeTcs.TrySetResult(new ProcessResult(process.ExitCode));
+                }
+            }, TaskScheduler.Default);
         }
-        catch (ArgumentException) { }
-        catch (InvalidOperationException) { }
+        finally
+        {
+            startupComplete.Set(); // Allow output/error/exit handlers to start processing data.
+        }
+
+        return (processLifetimeTcs.Task, new ProcessDisposable(process, processLifetimeTcs.Task, processSpec.KillEntireProcessTree));
+    }
+
+    private sealed class ProcessDisposable : IAsyncDisposable
+    {
+        private readonly System.Diagnostics.Process _process;
+        private readonly Task _processLifetimeTask;
+        private readonly bool _entireProcessTree;
+
+        public ProcessDisposable(System.Diagnostics.Process process, Task processLifetimeTask, bool entireProcessTree)
+        {
+            _process = process;
+            _processLifetimeTask = processLifetimeTask;
+            _entireProcessTree = entireProcessTree;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_process.HasExited)
+            {
+                return; // nothing to do
+            }
+
+            if (OperatingSystem.IsWindows())
+            {
+                if (!_process.CloseMainWindow())
+                {
+                    _process.Kill(_entireProcessTree);
+                }
+            }
+            else
+            {
+                sys_kill(_process.Id, sig: 2); // SIGINT
+            }
+
+            await _processLifetimeTask.WaitAsync(s_processExitTimeout).ConfigureAwait(false);
+            if (!_process.HasExited)
+            {
+                // Always try to kill the entire process tree here if all of the above has failed.
+                _process.Kill(entireProcessTree: true);
+            }
+        }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using Microsoft.VisualBasic.CompilerServices;
 using Tailwindcss.DotNetTool.Infrastructure;
 
 namespace Tailwindcss.DotNetTool.Cli;

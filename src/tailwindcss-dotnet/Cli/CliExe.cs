@@ -17,12 +17,30 @@ namespace Tailwindcss.DotNetTool.Cli
             WorkingDirectory = workingDirectory;
         }
 
-        public async Task<int> RunAsync()
+        public async Task<int> RunAsync(CancellationToken cancellationToken = default)
         {
-            var result = await ProcessUtil.RunAsync(FileName, Arguments ?? "",
-                workingDirectory: WorkingDirectory,
-                outputDataReceived: Console.WriteLine, errorDataReceived: Console.WriteLine);
-            return result.ExitCode;
+            ProcessSpec procSpec = new ProcessSpec(FileName)
+            {
+                WorkingDirectory = WorkingDirectory,
+                Arguments = Arguments ?? "",
+                OnOutputData = Console.Out.Write,
+                OnErrorData = Console.Error.Write,
+                InheritEnv = false,
+            };
+
+            var (resultTask, processDisposable) = ProcessUtil.Run(procSpec);
+
+            cancellationToken.Register(() =>
+            {
+                // don't need to wait for actual disposal completion because finished task indicates it's completed
+                try
+                {
+                    processDisposable.DisposeAsync();
+                }
+                catch (Exception) { }
+            });
+            
+            return (await resultTask).ExitCode;
         }
 
         public override string ToString()
