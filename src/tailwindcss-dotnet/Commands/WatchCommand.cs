@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using Tailwindcss.DotNetTool.Cli;
+using Tailwindcss.DotNetTool.Infrastructure;
 
 namespace Tailwindcss.DotNetTool.Commands;
 
@@ -32,11 +33,11 @@ public class WatchCommand : ICommand
 
     public async Task<int> Execute(AppInvocationContext context, bool debug, bool poll)
     {
-        CliExe cliExe = context.Cli.WatchCommand(context.GetProjectRoot(), debug, poll);
+        var command = context.Cli.WatchCommand(context.GetProjectRoot(), debug, poll);
 
-        context.Console.WriteLine("Starting Watch command...");
-        context.Console.WriteLine(cliExe.ToString());
+        Console.WriteLine("Starting Watch command...");
+        Console.WriteLine("Execute command: {0}.", string.Join(" ", command));
 
-        return await cliExe.RunAsync();
+        return await ProcessUtil.ExecuteAsync(command);
     }
 }

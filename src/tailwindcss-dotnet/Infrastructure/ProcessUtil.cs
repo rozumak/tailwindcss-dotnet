@@ -53,21 +53,6 @@ internal static partial class ProcessUtil
 
     private static readonly TimeSpan s_processExitTimeout = TimeSpan.FromSeconds(5);
 
-    public static async Task<int> RunAsync(string fileName, string? arguments = null)
-    {
-        ProcessSpec procSpec = new ProcessSpec(fileName)
-        {
-            WorkingDirectory = Directory.GetCurrentDirectory(),
-            Arguments = arguments ?? "",
-            OnOutputData = Console.Out.Write,
-            OnErrorData = Console.Error.Write,
-            InheritEnv = false,
-        };
-
-        var (result, _) = Run(procSpec);
-        return (await result).ExitCode;
-    }
-
     public static (Task<ProcessResult>, IAsyncDisposable) Run(ProcessSpec processSpec)
     {
         var process = new System.Diagnostics.Process()

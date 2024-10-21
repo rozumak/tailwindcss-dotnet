@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using Tailwindcss.DotNetTool.Cli;
+using Tailwindcss.DotNetTool.Infrastructure;
 
 namespace Tailwindcss.DotNetTool.Commands;
 
@@ -21,7 +22,6 @@ public class ExecCommand : ICommand
     {
         string binPath = cli.Executable();
 
-        var exe = new CliExe(binPath, string.Join(' ', args), null);
-        return exe.RunAsync();
+        return ProcessUtil.ExecuteAsync(binPath, string.Join(' ', args));
     }
 }
