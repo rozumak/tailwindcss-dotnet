@@ -9,7 +9,7 @@
 		<Description>
 			A dotnet tool for installing and invoking Tailwind CSS.
 		</Description>
-		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
 	</PropertyGroup>
 
 	<ItemGroup>
