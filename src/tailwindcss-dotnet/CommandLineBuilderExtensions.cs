@@ -85,7 +85,7 @@ internal static class CommandLineBuilderExtensions
                 projectPath = projectOptionResult.GetValueOrDefault<string?>();
             }
 
-            var projectInfo = ResolveProject(projectPath);
+            var projectInfo = DotnetTool.ResolveProject(projectPath);
             if (projectInfo?.ProjectRoot == null)
             {
                 context.Console.Error.WriteLine("Project file was not found. Use --project option or change current folder.");
@@ -99,44 +99,6 @@ internal static class CommandLineBuilderExtensions
         });
 
         return builder;
-    }
-
-    private static ProjectInfo? ResolveProject(string? path)
-    {
-        if (path == null)
-        {
-            path = Directory.GetCurrentDirectory();
-        }
-        else
-        {
-            path = Path.GetFullPath(path);
-
-            if (File.Exists(path))
-            {
-                // It's not a directory
-                return new ProjectInfo
-                {
-                    ProjectFilePath = Path.GetDirectoryName(path)!,
-                    ProjectRoot = path
-                };
-            }
-        }
-
-        if (!Directory.Exists(path))
-            return null;
-
-        var projectFile = Directory
-            .EnumerateFiles(path, "*.*proj", SearchOption.TopDirectoryOnly)
-            .FirstOrDefault(f => !string.Equals(Path.GetExtension(f), ".xproj", StringComparison.OrdinalIgnoreCase));
-
-        if (projectFile == null)
-            return null;
-
-        return new ProjectInfo
-        {
-            ProjectFilePath = projectFile,
-            ProjectRoot = path
-        };
     }
 
     public static CommandLineBuilder UseExecRun(

@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using Tailwindcss.DotNetTool.Cli;
+using Tailwindcss.DotNetTool.Infrastructure;
 
 namespace Tailwindcss.DotNetTool.Commands;
 
@@ -29,11 +30,12 @@ public class BuildCommand : ICommand
 
     public async Task<int> Execute(AppInvocationContext context, bool debug)
     {
-        CliExe cliExe = context.Cli.CompileCommand(context.GetProjectRoot(), debug);
+        string rootPath = context.GetProjectRoot();
+        var command = context.Cli.CompileCommand(rootPath, debug);
 
-        context.Console.WriteLine("Starting Build command...");
-        context.Console.WriteLine(cliExe.ToString());
+        Console.WriteLine("Starting Build command...");
+        Console.WriteLine("Execute command: {0}.", string.Join(" ", command));
 
-        return await cliExe.RunAsync();
+        return await ProcessUtil.ExecuteAsync(command, rootPath);
     }
 }

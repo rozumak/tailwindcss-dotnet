@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using Microsoft.VisualBasic.CompilerServices;
 using Tailwindcss.DotNetTool.Infrastructure;
 
 namespace Tailwindcss.DotNetTool.Cli;
@@ -50,11 +49,11 @@ public class TailwindCli
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                await ProcessUtil.RunAsync("chmod", "+x " + tempBinPath);
+                await ProcessUtil.ExecuteAsync("chmod", "+x " + tempBinPath);
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    await ProcessUtil.RunAsync("xattr", "-d com.apple.quarantine " + tempBinPath);
+                    await ProcessUtil.ExecuteAsync("xattr", "-d com.apple.quarantine " + tempBinPath);
                 }
             }
 
@@ -84,10 +83,11 @@ public class TailwindCli
         return _binPath!;
     }
 
-    public CliExe CompileCommand(string rootPath, bool debug = false)
+    public string[] CompileCommand(string rootPath, bool debug = false)
     {
         IEnumerable<string> args = new[]
         {
+            Executable(),
             "-i", Path.GetFullPath(Path.Combine("styles", "app.tailwind.css"), rootPath),
             "-o", Path.GetFullPath(Path.Combine("wwwroot", "css", "app.css"), rootPath),
         };
@@ -97,24 +97,21 @@ public class TailwindCli
             args = args.Append("--minify");
         }
 
-        return new CliExe(Executable(), string.Join(' ', args), rootPath);
+        return args.ToArray();
     }
 
-    public CliExe WatchCommand(string rootPath, bool debug = false, bool poll = false)
+    public string[] WatchCommand(string rootPath, bool debug = false, bool poll = false)
     {
-        var exe = CompileCommand(rootPath, debug);
+        var compileCommand = CompileCommand(rootPath, debug);
 
-        IEnumerable<string> args = new[]
-        {
-            exe.Arguments!,
-            "-w"
-        };
+        IEnumerable<string> result = compileCommand;
+        result = result.Append("-w");
 
         if (poll)
         {
-            args = args.Append("-p");
+            result = result.Append("-p");
         }
 
-        return new CliExe(exe.FileName, string.Join(' ', args), rootPath);
+        return result.ToArray();
     }
 }
