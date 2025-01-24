@@ -4,7 +4,7 @@ using Tailwindcss.DotNetTool.Infrastructure;
 
 namespace Tailwindcss.DotNetTool.Hosting;
 
-internal class TailwindcssHostedService : IHostedService
+public class TailwindcssHostedService : IHostedService
 {
     private readonly ILogger<TailwindcssHostedService> _logger;
 
@@ -63,16 +63,17 @@ internal class TailwindcssHostedService : IHostedService
     private void EnsureTailwindProcessRunning(AppInvocationContext appContext)
     {
         var watchCommand = appContext.Cli.WatchCommand(appContext.GetProjectRoot(), true);
-        _logger.LogDebug("Starting tailwind. Execute command: {Command}.", string.Join(" ", watchCommand));
+        _logger.LogInformation("Starting tailwind. Execute command: {Command}.", string.Join(" ", watchCommand));
 
         var procSpec = CreateTailwindProcSpec(watchCommand, appContext.GetProjectRoot());
         (var resultTask, _tailwindDisposable) = ProcessUtil.Run(procSpec);
 
-        resultTask.ContinueWith(_ =>
+        resultTask.ContinueWith(task =>
         {
             if (!_hostApplicationLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                _logger.LogCritical("Tailwind process died. Stopping the application...");
+                _logger.LogCritical("Tailwind process died. Exit code {ExitCode}. Stopping the application...",
+                    task.Result.ExitCode);
                 _hostApplicationLifetime.StopApplication();
             }
         });
@@ -83,10 +84,10 @@ internal class TailwindcssHostedService : IHostedService
         ProcessSpec procSpec = new ProcessSpec(command[0])
         {
             WorkingDirectory = workingDirectory,
-            Arguments = string.Join(" ", command.Skip(0)),
-            OnOutputData = Console.Out.Write,
-            OnErrorData = Console.Error.Write,
-            InheritEnv = false,
+            Arguments = string.Join(" ", command.Skip(1)),
+            OnOutputData = Console.Out.WriteLine,
+            OnErrorData = Console.Error.WriteLine,
+            InheritEnv = true,
             ThrowOnNonZeroReturnCode = false,
         };
 
