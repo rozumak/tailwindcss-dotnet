@@ -16,7 +16,7 @@ namespace build
         private const string Pack = "pack";
         private const string Publish = "publish";
 
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             const string solutionName = "Tailwindcss.DotnetTool.sln";
 
@@ -30,7 +30,7 @@ namespace build
             string? version = null;
             Target(Minver, DependsOn(InstallMinver), async () =>
             {
-                version = await ReadAsync("minver", "-t v");
+                (version, _) = await ReadAsync("minver", "-t v");
                 Console.WriteLine("Version: {0}", version);
             });
 
@@ -60,7 +60,7 @@ namespace build
             Target(Pack, DependsOn(Compile, Minver), ForEach(nugetProjects), project =>
                 Run("dotnet", $"pack {project} -o ./artifacts --configuration Release -p:PackageVersion={version}"));
 
-            RunTargetsAndExit(args);
+            await RunTargetsAndExitAsync(args);
         }
 
         private static void EnsureDirectoriesDeleted(params string[] paths)
