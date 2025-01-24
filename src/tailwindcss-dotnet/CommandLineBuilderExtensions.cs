@@ -13,11 +13,11 @@ internal static class CommandLineBuilderExtensions
     public static CommandLineBuilder UseContextInitializer(
         this CommandLineBuilder builder, AppInvocationContext appContext)
     {
-        const string pattern = @"^v3\.\d+\.\d+$";
+        const string pattern = @"^v4\.\d+\.\d+$";
 
         string? tailwindVersion = null;
         var tailwindVersionOption = new Option<string?>("--tailwindcss",
-            "Specify tailwind cli version to use in format 'v3.x.x'.");
+            "Specify tailwind cli version to use in format 'v4.x.x'.");
         builder.Command.AddGlobalOption(tailwindVersionOption);
 
         builder.AddMiddleware(async (context, next) =>

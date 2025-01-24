@@ -4,7 +4,7 @@ namespace Tailwindcss.DotNetTool.Cli;
 
 public class Upstream
 {
-    public static string Version => "v3.4.10";
+    public static string Version => "v4.0.0";
 
     public static string? GetNativeExecutableName()
     {

@@ -9,11 +9,10 @@
 		<Description>
 			A dotnet tool for installing and invoking Tailwind CSS.
 		</Description>
-		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Install\tailwind.config.js"/>
 		<EmbeddedResource Include="Install\app.tailwind.css"/>
 
 		<None Include="..\..\README.md" Pack="true" PackagePath="\" />

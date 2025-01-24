@@ -9,13 +9,6 @@ public class ProjectInstaller
 
     public async Task Run(string projectRoot)
     {
-        string tailwindConfig = Path.GetFullPath("tailwind.config.js", projectRoot);
-        if (!File.Exists(tailwindConfig))
-        {
-            Console.WriteLine("Add default tailwind.config.js");
-            await CopyTo("tailwind.config.js", tailwindConfig);
-        }
-
         var tailwindCss = Path.GetFullPath(Path.Combine("styles", "app.tailwind.css"), projectRoot);
         if (!File.Exists(tailwindCss))
         {

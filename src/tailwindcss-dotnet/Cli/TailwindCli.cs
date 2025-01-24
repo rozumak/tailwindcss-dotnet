@@ -90,7 +90,6 @@ public class TailwindCli
         {
             "-i", Path.GetFullPath(Path.Combine("styles", "app.tailwind.css"), rootPath),
             "-o", Path.GetFullPath(Path.Combine("wwwroot", "css", "app.css"), rootPath),
-            "-c", Path.GetFullPath("tailwind.config.js", rootPath),
         };
 
         if (!debug)
