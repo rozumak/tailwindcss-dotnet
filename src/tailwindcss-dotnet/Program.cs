@@ -4,6 +4,8 @@ using Tailwindcss.DotNetTool;
 using Tailwindcss.DotNetTool.Cli;
 using Tailwindcss.DotNetTool.Commands;
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 var appContext = new AppInvocationContext();
 CommandLineBuilder builder = new CommandLineBuilder
 {

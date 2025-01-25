@@ -4,7 +4,7 @@ internal static partial class ProcessUtil
 {
     public static Task<int> ExecuteAsync(string[] command, string? workingDirectory = null)
     {
-        return ExecuteAsync(command[0], string.Join(" ", command.Skip(0)), workingDirectory);
+        return ExecuteAsync(command[0], string.Join(" ", command.Skip(1)), workingDirectory);
     }
 
     public static async Task<int> ExecuteAsync(string fileName, string? arguments = null, string? workingDirectory = null)
@@ -13,9 +13,9 @@ internal static partial class ProcessUtil
         {
             WorkingDirectory = workingDirectory ?? Directory.GetCurrentDirectory(),
             Arguments = arguments ?? "",
-            OnOutputData = Console.Out.Write,
-            OnErrorData = Console.Error.Write,
-            InheritEnv = false,
+            OnOutputData = Console.Out.WriteLine,
+            OnErrorData = Console.Error.WriteLine,
+            InheritEnv = true,
         };
 
         var (result, _) = ProcessUtil.Run(procSpec);
