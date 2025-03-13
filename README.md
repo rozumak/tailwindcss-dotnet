@@ -91,7 +91,7 @@ The default paths are opinionated. If you need to use custom file paths or make 
 
 ### Override Tailwind CLI version
 
-If you need to use a specific version of Tailwind CLI for your project, you can do so by specifying the version using the `--tailwindcss` option.
+If you need to use a specific version of Tailwind CLI for your project, you can do so by specifying the version using the `--tailwindcss` option. If nothing is specified then the latest release of the tailwindcss executable is pulled.
 
 For example, to use Tailwind CLI of version 3.2.1, you can use the following command:
 `tailwind build --tailwindcss v3.2.1`
