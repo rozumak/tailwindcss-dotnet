@@ -88,8 +88,8 @@ public class TailwindCli
         IEnumerable<string> args = new[]
         {
             Executable(),
-            "-i", Path.GetFullPath(Path.Combine("styles", "app.tailwind.css"), rootPath),
-            "-o", Path.GetFullPath(Path.Combine("wwwroot", "css", "app.css"), rootPath),
+            "-i", $"\"{Path.GetFullPath(Path.Combine("styles", "app.tailwind.css"), rootPath)}\"",
+            "-o", $"\"{Path.GetFullPath(Path.Combine("wwwroot", "css", "app.css"), rootPath)}\"",
         };
 
         if (!debug)
