@@ -13,7 +13,7 @@ internal static class CommandLineBuilderExtensions
     public static CommandLineBuilder UseContextInitializer(
         this CommandLineBuilder builder, AppInvocationContext appContext)
     {
-        const string pattern = @"^v4\.\d+\.\d+$";
+        const string pattern = @"^v\d\.\d+\.\d+$";
 
         string? tailwindVersion = null;
         var tailwindVersionOption = new Option<string?>("--tailwindcss",
